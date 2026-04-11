@@ -14,12 +14,14 @@ var (
 )
 
 type User struct {
-	ID        int64     `json:"id"`
-	Username  string    `json:"username"`
-	Email     string    `json:"email"`
-	Password  password  `json:"-"`
-	CreatedAt time.Time `json:"created_at"`
-	Version   int       `json:"version"`
+	ID        int64      `json:"id"`
+	Username  string     `json:"username"`
+	Email     string     `json:"email"`
+	Password  password   `json:"-"`
+	CreatedAt time.Time  `json:"created_at"`
+	UpdatedAt *time.Time `json:"updated_at,omitempty"`
+	DeletedAt *time.Time `json:"-"`
+	Version   int        `json:"version"`
 }
 
 type password struct {
@@ -79,7 +81,7 @@ func (m *UserModel) GetByEmail(email string) (*User, error) {
 	query := `
 	SELECT id, username, email, password_hash, created_at
 	FROM users
-	WHERE email = $1`
+	WHERE email = $1 AND deleted_at IS NULL`
 
 	var user User
 	err := m.DB.QueryRow(query, email).Scan(&user.ID, &user.Username, &user.Email, &user.Password.hash, &user.CreatedAt)
@@ -116,8 +118,8 @@ func (m *UserModel) GetByID(id int64) (*User, error) {
 func (m *UserModel) Update(user *User) error {
 	query := `
 	UPDATE users
-	SET username = $1, email = $2, password_hash = $3, version = version + 1
-	WHERE id = $4 AND version = $5`
+	SET username = $1, email = $2, password_hash = $3, version = version + 1, updated_at = NOW()
+	WHERE id = $4 AND version = $5 AND deleted_at IS NULL`
 
 	args := []interface{}{user.Username, user.Email, user.Password.hash, user.ID, user.Version}
 
@@ -126,4 +128,27 @@ func (m *UserModel) Update(user *User) error {
 
 	_, err := m.DB.ExecContext(ctx, query, args...)
 	return err
+}
+
+func (m *UserModel) Delete(context context.Context, user *User) error {
+	query := `
+	UPDATE users
+	SET deleted_at = NOW(), version = version + 1
+	WHERE id = $1 AND version = $2 AND deleted_at IS NULL`
+
+	result, err := m.DB.ExecContext(context, query, user.ID, user.Version)
+	if err != nil {
+		return err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if rowsAffected == 0 {
+		return errors.New("record not found or edit conflict")
+	}
+
+	return nil
 }
