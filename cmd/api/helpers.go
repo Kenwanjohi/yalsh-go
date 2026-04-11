@@ -65,3 +65,22 @@ func (app *application) generateJWT(userID int64, username string) (string, erro
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	return token.SignedString([]byte(app.config.jwt.secret))
 }
+
+func (app *application) setAuthCookie(w http.ResponseWriter, token string, expires time.Time) {
+	cookie := &http.Cookie{
+		Name:     "accessToken",
+		Value:    token,
+		Path:     "/",
+		HttpOnly: true,
+		Secure:   app.config.env == "production",
+		SameSite: http.SameSiteLaxMode,
+	}
+
+	if expires.IsZero() {
+		cookie.MaxAge = -1 
+	} else {
+		cookie.Expires = expires
+	}
+
+	http.SetCookie(w, cookie)
+}

@@ -60,17 +60,8 @@ func (app *application) registerUserHandler(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	cookie := &http.Cookie{
-		Name:     "accessToken",
-		Value:    token,
-		Path:     "/",
-		HttpOnly: true,
-		Secure:   true,
-		SameSite: http.SameSiteStrictMode,
-		Expires:  time.Now().Add(14 * 24 * time.Hour),
-	}
+	app.setAuthCookie(w, token, time.Now().Add(14*24*time.Hour))
 
-	http.SetCookie(w, cookie)
 	err = app.writeJSON(w, http.StatusCreated, envelope{"registered": true}, nil)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
@@ -102,7 +93,6 @@ func (app *application) createLinkHandler(w http.ResponseWriter, r *http.Request
 		app.failedValidationResponse(w, r, v.Errors)
 		return
 	}
-
 
 	err = app.models.Links.Insert(r.Context(), link)
 	if err != nil {
@@ -164,16 +154,7 @@ func (app *application) loginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	cookie := &http.Cookie{
-		Name:     "accessToken",
-		Value:    token,
-		Path:     "/",
-		HttpOnly: true,
-		Secure:   true,
-		SameSite: http.SameSiteStrictMode,
-		Expires:  time.Now().Add(14 * 24 * time.Hour),
-	}
-	http.SetCookie(w, cookie)
+	app.setAuthCookie(w, token, time.Now().Add(14*24*time.Hour))
 
 	app.writeJSON(w, http.StatusOK, envelope{"authenticated": true}, nil)
 }
@@ -230,18 +211,9 @@ func (app *application) deleteLinkHandler(w http.ResponseWriter, r *http.Request
 }
 
 func (app *application) logoutHandler(w http.ResponseWriter, r *http.Request) {
-	cookie := &http.Cookie{
-		Name:     "accessToken",
-		Value:    "",
-		Path:     "/",
-		HttpOnly: true,
-		Secure:   true,
-		SameSite: http.SameSiteStrictMode,
-		MaxAge:   -1,
-	}
-	http.SetCookie(w, cookie)
+	app.setAuthCookie(w, "", time.Time{})
 
-	app.writeJSON(w, http.StatusOK, envelope{"message": "logged out successfully"}, nil)
+	w.WriteHeader(http.StatusNoContent)
 }
 
 func (app *application) updateProfileHandler(w http.ResponseWriter, r *http.Request) {
@@ -331,6 +303,23 @@ func (app *application) updateLinkHandler(w http.ResponseWriter, r *http.Request
 	}
 
 	err = app.writeJSON(w, http.StatusOK, envelope{"link": link}, nil)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+	}
+}
+
+func (app *application) deleteAccountHandler(w http.ResponseWriter, r *http.Request) {
+	user := app.contextGetUser(r)
+
+	err := app.models.Users.Delete(r.Context(), user)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+	app.setAuthCookie(w, "", time.Time{})
+
+	err = app.writeJSON(w, http.StatusOK, envelope{"deleted": true}, nil)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 	}
