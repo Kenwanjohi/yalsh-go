@@ -1,0 +1,3 @@
+
+ALTER TABLE links DROP COLUMN IF EXISTS deleted_at;
+ALTER TABLE links DROP COLUMN IF EXISTS version;
