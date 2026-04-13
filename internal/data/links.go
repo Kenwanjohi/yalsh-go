@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/Kenwanjohi/yalsh-go/internal/validator"
+	"github.com/jackc/pgx/v5/pgconn"
 )
 
 type Link struct {
@@ -149,9 +150,14 @@ func (m *LinkModel) Update(ctx context.Context, link *Link) error {
 
 	err := m.DB.QueryRowContext(ctx, query, args...).Scan(&link.Version)
 	if err != nil {
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) {
+			if pgErr.Code == "23505" && pgErr.ConstraintName == "links_unique_key_active" {
+				return ErrDuplicateKey
+			}
+		}
+
 		switch {
-		case err.Error() == "pq: duplicate key value violates unique constraint \"links_unique_key_active\"":
-			return ErrDuplicateKey
 		case errors.Is(err, sql.ErrNoRows):
 			return ErrEditConflict
 		default:
