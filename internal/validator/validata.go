@@ -5,7 +5,7 @@ import (
 	"regexp"
 )
 
-var KeyRX =  regexp.MustCompile(`^[a-zA-Z0-9_-]+$`)
+var KeyRX = regexp.MustCompile(`^[a-zA-Z0-9_-]+$`)
 
 type Validator struct {
 	Errors map[string]string
@@ -37,11 +37,11 @@ func (v *Validator) Matches(value string, rx *regexp.Regexp) bool {
 	return rx.MatchString(value)
 }
 
-func (v *Validator) IsURL (path string) bool {
+func (v *Validator) IsURL(path string) bool {
 	u, err := url.ParseRequestURI(path)
 	return err == nil && u.Scheme != "" && u.Host != ""
 }
 
 func (v *Validator) CheckLength(value string, min, max int, key, message string) {
-    v.Check(len(value) >= min && len(value) <= max, key, message)
+	v.Check(len(value) >= min && len(value) <= max, key, message)
 }

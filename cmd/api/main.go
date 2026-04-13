@@ -28,7 +28,7 @@ type config struct {
 type application struct {
 	config config
 	logger *log.Logger
-	models  data.Models
+	models data.Models
 }
 
 func main() {
@@ -42,20 +42,21 @@ func main() {
 
 	logger := log.New(os.Stdout, "", log.Ldate|log.Ltime)
 
-
 	db, err := openDB(cfg)
 	if err != nil {
 		logger.Fatal(err)
 	}
-	defer db.Close()
+	defer func() {
+		if err := db.Close(); err != nil {
+			logger.Println(err)
+		}
+	}()
 
 	app := &application{
 		config: cfg,
 		logger: logger,
-		models:  data.NewModels(db),
+		models: data.NewModels(db),
 	}
-
-
 
 	srv := &http.Server{
 		Addr:         fmt.Sprintf(":%d", cfg.port),

@@ -43,6 +43,10 @@ func (app *application) registerUserHandler(w http.ResponseWriter, r *http.Reque
 		Email:    input.Email,
 	}
 	err = user.Password.Set(input.Password)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
 
 	err = app.models.Users.Insert(user)
 	if err != nil {
@@ -156,7 +160,10 @@ func (app *application) loginHandler(w http.ResponseWriter, r *http.Request) {
 
 	app.setAuthCookie(w, token, time.Now().Add(14*24*time.Hour))
 
-	app.writeJSON(w, http.StatusOK, envelope{"authenticated": true}, nil)
+	err = app.writeJSON(w, http.StatusOK, envelope{"authenticated": true}, nil)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+	}
 }
 
 func (app *application) listLinksHandler(w http.ResponseWriter, r *http.Request) {

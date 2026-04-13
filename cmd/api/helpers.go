@@ -31,7 +31,7 @@ func (app *application) writeJSON(w http.ResponseWriter, status int, data envelo
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
-	w.Write(js)
+	_, _ = w.Write(js) // Ignore error as we have already written the header
 
 	return nil
 }
@@ -77,7 +77,7 @@ func (app *application) setAuthCookie(w http.ResponseWriter, token string, expir
 	}
 
 	if expires.IsZero() {
-		cookie.MaxAge = -1 
+		cookie.MaxAge = -1
 	} else {
 		cookie.Expires = expires
 	}

@@ -71,7 +71,9 @@ func (m *LinkModel) GetAllForUser(context context.Context, userID int64) ([]*Lin
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() {
+		_ = rows.Close()
+	}()
 
 	var links []*Link
 
