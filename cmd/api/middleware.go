@@ -50,8 +50,22 @@ func (app *application) requireAuthenticated(next http.Handler) http.Handler {
 
 func (app *application) enableCORS(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// In production, replace "*" with your actual frontend domain
-		w.Header().Set("Access-Control-Allow-Origin", "http://localhost:3000")
+		origin := r.Header.Get("Origin")
+
+		// List of allowed origins
+		allowedOrigins := []string{
+			"http://localhost:5173", // Local dev (Vite default)
+			"http://localhost:3000", // Local dev (Alternative)
+			"https://app.yalsh.com", // Production frontend
+		}
+
+		for _, o := range allowedOrigins {
+			if origin == o {
+				w.Header().Set("Access-Control-Allow-Origin", origin)
+				break
+			}
+		}
+
 		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
 		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
 		w.Header().Set("Access-Control-Allow-Credentials", "true")

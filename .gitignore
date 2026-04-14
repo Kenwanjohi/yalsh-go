@@ -7,7 +7,9 @@
 bin/
 dist/
 out/
-api
+/api
+/api-bin
+/yalsh-go
 
 # Dependencies
 vendor/
