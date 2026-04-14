@@ -1,0 +1,14 @@
+{
+    # Global options (optional: e.g., your email for Let's Encrypt notifications)
+    # email your-email@example.com
+}
+
+{$DOMAIN_NAME} {
+    # Forward all requests to the 'api' container on port 3000
+    reverse_proxy api:3000
+
+    # Optional: Log requests
+    log {
+        output file /var/log/caddy/access.log
+    }
+}

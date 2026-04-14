@@ -1,0 +1,25 @@
+services:
+  api:
+    image: ${DOCKER_USERNAME}/yalsh-go:latest
+    restart: always
+    environment:
+      - PG_CONN=${PG_CONN}
+      - JWT_SECRET=${JWT_SECRET}
+      - ENV=production
+
+  caddy:
+    image: caddy:latest
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - api
+
+volumes:
+  caddy_data:
+  caddy_config:
