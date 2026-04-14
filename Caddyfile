@@ -1,8 +1,22 @@
-# If DOMAIN_NAME is empty, it will default to :80
-{$DOMAIN_NAME:localhost} {
+# API Domain
+api.{$DOMAIN_NAME} {
+    reverse_proxy api:3000
+    log {
+        output file /var/log/caddy/api.log
+    }
+}
+
+# Short Link Domain (Root)
+{$DOMAIN_NAME} {
+    # If someone visits just 'yalsh.com', send them to the frontend app
+    handle_path / {
+        redir https://app.yalsh.com
+    }
+
+    # Everything else (yalsh.com/key) goes to the Go app for redirection
     reverse_proxy api:3000
 
     log {
-        output file /var/log/caddy/access.log
+        output file /var/log/caddy/shortener.log
     }
 }
